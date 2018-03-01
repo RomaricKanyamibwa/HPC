@@ -274,11 +274,8 @@ int worker(int numbloc)
       pima=mandel_seq(blockid);
       if(blockid % 200==0)
       printf("Worker_SEQ#%d: %d\n",blockid,pima[400] );
-      //printf("----------------P#%d:Receiving blockid=%d-------------------------\n",rank,blockid);
       MPI_Send(&blockid,1,MPI_UNSIGNED,rank_master,TAG_REQ,MPI_COMM_WORLD);
-      //printf("process #%d is Sending blockid #%d.\n",rank,blockid);
       MPI_Send(pima,w*nlines,MPI_UNSIGNED_CHAR,rank_master,TAG_RESP,MPI_COMM_WORLD);
-      //printf("process #%d is Sending data.\n",rank);
     }
     else
     {
@@ -302,20 +299,15 @@ int master(int NP,unsigned char *pima)
   for(i=1;i<NP;i++)
   {
     MPI_Send(&blockid,1,MPI_INT,i,TAG_REQ,MPI_COMM_WORLD);
-    //printf("Sending req to #%d\n",i);
     blockid++;
   }
-  //printf("RESPONSE\n");
   printf("============================ MESSAGE non Reçu:%d ============================\n",nblocs-(blockid-NP)-1);
   while(blockid<nblocs || nblocs-(blockid-NP)-1!=0)
   {
     MPI_Recv(&blockidresp,1,MPI_UNSIGNED,MPI_ANY_SOURCE,TAG_REQ,MPI_COMM_WORLD,&status);
     MPI_Recv(pima+w*nlines*blockidresp,w*nlines,MPI_UNSIGNED_CHAR,status.MPI_SOURCE,TAG_RESP,MPI_COMM_WORLD,&status);
-//    if(blockidresp >=790 ||blockidresp % 200==0 )
-//        printf("MASTER_SEQ#%d: %d\n",blockidresp,pima[400+w*nlines*blockidresp] );
     MPI_Send(&blockid,1,MPI_INT,status.MPI_SOURCE,TAG_REQ,MPI_COMM_WORLD);
     blockid++;
-    //printf("============================ MESSAGE non Reçu:%d ============================\n",nblocs-(blockid-NP)-1);
   }
   printf("============================ Nombre de MESSAGES Reçu:%d ============================\n",blockid-NP+1);
   for(i=1;i<NP;i++)
@@ -357,7 +349,7 @@ int main(int argc,char* argv[])
     xmax =  2; ymax =  2;
     w = h = 800;
     prof = 10000;
-    nlines=16;
+    nlines=1;
 
 
     /* Recuperation des parametres */
@@ -378,13 +370,9 @@ int main(int argc,char* argv[])
     xinc = (xmax - xmin) / (w-1);
     yinc = (ymax - ymin) / (h-1);
     xmin_prime = xmin;
-    //ymin_prime = ymin+my_rank*hprime*xinc;
 
     /* Allocation memoire du tableau resultat */
     pima = (unsigned char *)malloc( w*h*sizeof(unsigned char));
-    int i;
-    for(i=0;i<w*h;i++)
-        pima[i]=255;
     if( pima == NULL) {
       fprintf( stderr, "Erreur allocation mémoire du tableau \n");
       return 0;
@@ -402,14 +390,7 @@ int main(int argc,char* argv[])
         debut=MPI_Wtime();
         master(p,pima);
         fin=MPI_Wtime();
-
-        //printf("Mandelbrot SET HPC\n Begin Master;\n");
-    	// printf("Send message from %s process #%d\n",hostname,my_rank);
-    	//int i;
-//    	for(i=0;i<h;i++)
-//            if(i% 200==0)
-//                printf("MAIN_SEQ#%d: %d\n",i,pima[400+w*nlines*i] );
-            printf("END of Mandelbrot SET HPC #%d\n",my_rank);
+        printf("END of Mandelbrot SET HPC #%d\n",my_rank);
         /* Sauvegarde de la grille dans le fichier resultat "mandel.ras" */
         sauver_rasterfile( "mandel_paral_worker.ras", w, h, pima);
         fprintf( stderr, "[Temps total de calcul:%g sec]\n",fin - debut);
