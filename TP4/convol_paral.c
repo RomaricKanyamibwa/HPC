@@ -16,7 +16,7 @@
 
 #define MAX(a,b) ((a>b) ? a : b)
 
-/** 
+/**
  * \struct Raster
  * Structure décrivant une image au format Sun Raster
  */
@@ -40,7 +40,7 @@ double my_gettimeofday(){
 
 
 /**
- * Cette procedure convertit un entier LINUX en un entier SUN 
+ * Cette procedure convertit un entier LINUX en un entier SUN
  *
  * \param i pointeur vers l'entier à convertir
  */
@@ -73,12 +73,12 @@ void swap(int *i) {
 void lire_rasterfile(char *nom, Raster *r) {
   FILE *f;
   //int i;
-    
+
   if( (f=fopen( nom, "r"))==NULL) {
     fprintf(stderr,"erreur a la lecture du fichier %s\n", nom);
     exit(1);
   }
-  fread( &(r->file), sizeof(struct rasterfile), 1, f);    
+  fread( &(r->file), sizeof(struct rasterfile), 1, f);
   swap(&(r->file.ras_magic));
   swap(&(r->file.ras_width));
   swap(&(r->file.ras_height));
@@ -87,18 +87,18 @@ void lire_rasterfile(char *nom, Raster *r) {
   swap(&(r->file.ras_type));
   swap(&(r->file.ras_maptype));
   swap(&(r->file.ras_maplength));
-    
+
   if ((r->file.ras_depth != 8) ||  (r->file.ras_type != RT_STANDARD) ||
       (r->file.ras_maptype != RMT_EQUAL_RGB)) {
     fprintf(stderr,"palette non adaptee\n");
     exit(1);
   }
-    
+
   /* composante de la palette */
   fread(&(r->rouge),r->file.ras_maplength/3,1,f);
   fread(&(r->vert), r->file.ras_maplength/3,1,f);
   fread(&(r->bleu), r->file.ras_maplength/3,1,f);
-    
+
   if ((r->data=malloc(r->file.ras_width*r->file.ras_height))==NULL){
     fprintf(stderr,"erreur allocation memoire\n");
     exit(1);
@@ -114,12 +114,12 @@ void lire_rasterfile(char *nom, Raster *r) {
 void sauve_rasterfile(char *nom, Raster *r)     {
   FILE *f;
   //int i;
-  
+
   if( (f=fopen( nom, "w"))==NULL) {
     fprintf(stderr,"erreur a l'ecriture du fichier %s\n", nom);
     exit(1);
   }
-    
+
   swap(&(r->file.ras_magic));
   swap(&(r->file.ras_width));
   swap(&(r->file.ras_height));
@@ -128,7 +128,7 @@ void sauve_rasterfile(char *nom, Raster *r)     {
   swap(&(r->file.ras_type));
   swap(&(r->file.ras_maptype));
   swap(&(r->file.ras_maplength));
-    
+
   fwrite(&(r->file),sizeof(struct rasterfile),1,f);
   /* composante de la palette */
   fwrite(&(r->rouge),256,1,f);
@@ -137,22 +137,22 @@ void sauve_rasterfile(char *nom, Raster *r)     {
   /* pour le reconvertir pour la taille de l'image */
   swap(&(r->file.ras_width));
   swap(&(r->file.ras_height));
-  fwrite(r->data,r->file.ras_width*r->file.ras_height,1,f); 
+  fwrite(r->data,r->file.ras_width*r->file.ras_height,1,f);
   fclose(f);
 }
 
 /**
  * Réalise une division d'entiers plus précise que
  * l'opérateur '/'.
- * Remarque : la fonction rint provient de la librairie 
+ * Remarque : la fonction rint provient de la librairie
  * mathématique.
  */
 
 unsigned char division(int numerateur,int denominateur) {
-  
+
   if (denominateur != 0)
-    return (unsigned char) rint((double)numerateur/(double)denominateur); 
-  else 
+    return (unsigned char) rint((double)numerateur/(double)denominateur);
+  else
     return 0;
 }
 
@@ -186,9 +186,9 @@ typedef enum {
  * \return la valeur de convolution.
  */
 
-unsigned char filtre( filtre_t choix, 
-		      unsigned char NO, unsigned char N,unsigned char NE, 
-		      unsigned char O,unsigned char CO, unsigned char E, 
+unsigned char filtre( filtre_t choix,
+		      unsigned char NO, unsigned char N,unsigned char NE,
+		      unsigned char O,unsigned char CO, unsigned char E,
 		      unsigned char SO,unsigned char S,unsigned char SE) {
   int numerateur,denominateur;
 
@@ -196,17 +196,17 @@ unsigned char filtre( filtre_t choix,
     {
     case CONVOL_MOYENNE1:
 	  /* filtre moyenneur */
-	  numerateur = (int)NO + (int)N + (int)NE + (int)O + (int)CO + 
+	  numerateur = (int)NO + (int)N + (int)NE + (int)O + (int)CO +
 	    (int)E + (int)SO + (int)S + (int)SE;
 	  denominateur = 9;
-	  return division(numerateur,denominateur); 
+	  return division(numerateur,denominateur);
 
     case CONVOL_MOYENNE2:
 	  /* filtre moyenneur */
 	  numerateur = (int)NO + (int)N + (int)NE + (int)O + 4*(int)CO +
 	    (int)E + (int)SO + (int)S + (int)SE;
 	  denominateur = 12;
-	  return division(numerateur,denominateur);	
+	  return division(numerateur,denominateur);
 
     case CONVOL_CONTOUR1:
 	  /* extraction de contours */
@@ -246,14 +246,14 @@ unsigned char filtre( filtre_t choix,
 int convolution( filtre_t choix, unsigned char tab[],int nbl,int nbc) {
   int i,j;
   unsigned char *tmp;
-  
+
   /* Allocation memoire du tampon intermediaire : */
   tmp = (unsigned char*) malloc(sizeof(unsigned char) *nbc*nbl);
   if (tmp == NULL) {
     printf("Erreur dans l'allocation de tmp dans convolution \n");
     return 1;
   }
-  
+
   /* on laisse tomber les bords */
   for(i=1 ; i<nbl-1 ; i++){
     for(j=1 ; j<nbc-1 ; j++){
@@ -264,7 +264,7 @@ int convolution( filtre_t choix, unsigned char tab[],int nbl,int nbc) {
 			    tab[(i-1)*nbc+j-1],tab[(i-1)*nbc+j],tab[(i-1)*nbc+j+1]);
     } /* for j */
   } /* for i */
-  
+
   /* Recopie de l'image apres traitement dans l'image initiale,
    * On remarquera que la premiere, la derniere ligne, la premiere
    * et la derniere colonne ne sont pas copiées (ce qui force a faire
@@ -272,10 +272,10 @@ int convolution( filtre_t choix, unsigned char tab[],int nbl,int nbc) {
   for( i=1; i<nbl-1; i++){
     memcpy( tab+nbc*i+1, tmp+nbc*i+1, (nbc-2)*sizeof(unsigned char));
   } /* for i */
-  
+
   /* Liberation memoire du tampon intermediaire : */
   free(tmp);
-  return 0;   
+  return 0;
 }
 
 
@@ -288,8 +288,8 @@ static char usage [] = "Usage : %s <nom image SunRaster> [0|1|2|3|4] <nbiter>\n"
 /*
  * Partie principale
  */
-
- #ifdef TAG_MESSAGE
+#define TAG_MESSAGE
+#ifdef TAG_MESSAGE
 #define TAG_LAST 0
 #define TAG_FIRST 1
 #endif /* #ifdef TAG_MESSAGE */
@@ -301,6 +301,7 @@ int main(int argc, char *argv[]) {
   int    w, h,h_local;	/* nombre de lignes et de colonnes de l'image */
 
   int my_rank,NP/*Nombre de processeur*/;
+  MPI_Status status;
 
   /* Variables liees au traitement de l'image */
   int 	 filtre;		/* numero du filtre */
@@ -323,24 +324,24 @@ int main(int argc, char *argv[]) {
     fprintf( stderr, usage, argv[0]);
     return 1;
   }
-      
+
   /* Saisie des paramètres */
   filtre = atoi(argv[2]);
   nbiter = atoi(argv[3]);
-        
-  
-    
+
+
+
   /* debut du chronometrage */
   debut = my_gettimeofday();
   if(my_rank==0)
   {
     /* Lecture du fichier Raster */
-    lire_rasterfile( argv[1], &r);  
+    lire_rasterfile( argv[1], &r);
     h = r.file.ras_height;
-    w = r.file.ras_width;          
+    w = r.file.ras_width;
     printf("Zero Process\n");
   }
-  h_local=(my_rank==0 || my_rank==(NP-1))?(h/NP+1):(h/NP+2);   
+  h_local=(my_rank==0 || my_rank==(NP-1))?(h/NP+1):(h/NP+2);
 
   MPI_Bcast(&h,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&w,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -351,15 +352,15 @@ int main(int argc, char *argv[]) {
   MPI_Scatter(
   r.data,h*w/NP,MPI_UNSIGNED_CHAR,local_data+w*(my_rank!=0)/*ou on peut mettre w*(p==0)?0:1*/,
   h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
-           
- 
+
+
   /* La convolution a proprement parler */
   for(i=0 ; i < nbiter ; i++){
-    
+
      if(my_rank!=0)
      {
       MPI_Send(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD);
-      MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD);
+      MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD,&status);
 
      }
      if(my_rank!=NP-1)
@@ -369,19 +370,19 @@ int main(int argc, char *argv[]) {
      convolution( filtre,local_data, h_local, w);
   } /* for i */
 
-  
+
   // MPI_Gather(
   // local_data,h*w/NP,MPI_UNSIGNED_CHAR,r.data,
   // h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
-  
+
 
   /* fin du chronometrage */
   fin = my_gettimeofday();
   printf("#%d-Temps total de calcul : %g seconde(s) \n",my_rank,fin - debut);
-    
+
   /* Sauvegarde du fichier Raster */
   if(my_rank==0)
-  { 
+  {
     char nom_sortie[100] = "";
     printf("NOM\n");
     sprintf(nom_sortie, "post-convolution_filtre%d_nbIter%d.ras", filtre, nbiter);
