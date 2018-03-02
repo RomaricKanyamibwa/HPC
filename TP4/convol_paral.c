@@ -359,21 +359,21 @@ int main(int argc, char *argv[]) {
 
      if(my_rank!=0)
      {
-      MPI_Send(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD);
-      MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD,&status);
+      	MPI_Send(local_data+w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD);
+      	MPI_Recv(local_data,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD,&status);
 
      }
      if(my_rank!=NP-1)
      {
+ 		MPI_Send(local_data+(h_local-2)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_FIRST,MPI_COMM_WORLD);
+      	MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_FIRST,MPI_COMM_WORLD,&status);
 
      }
      convolution( filtre,local_data, h_local, w);
   } /* for i */
 
 
-  // MPI_Gather(
-  // local_data,h*w/NP,MPI_UNSIGNED_CHAR,r.data,
-  // h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
+  MPI_Gather(local_data,h*w/NP,MPI_UNSIGNED_CHAR,r.data,h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
 
 
   /* fin du chronometrage */

@@ -306,7 +306,8 @@ int master(int NP,unsigned char *pima)
   {
     MPI_Recv(&blockidresp,1,MPI_UNSIGNED,MPI_ANY_SOURCE,TAG_REQ,MPI_COMM_WORLD,&status);
     MPI_Recv(pima+w*nlines*blockidresp,w*nlines,MPI_UNSIGNED_CHAR,status.MPI_SOURCE,TAG_RESP,MPI_COMM_WORLD,&status);
-    MPI_Send(&blockid,1,MPI_INT,status.MPI_SOURCE,TAG_REQ,MPI_COMM_WORLD);
+    if(blockid<nblocs)
+      MPI_Send(&blockid,1,MPI_INT,status.MPI_SOURCE,TAG_REQ,MPI_COMM_WORLD);
     blockid++;
   }
   printf("============================ Nombre de MESSAGES Reçu:%d ============================\n",blockid-NP+1);
