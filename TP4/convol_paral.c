@@ -345,44 +345,48 @@ int main(int argc, char *argv[]) {
   MPI_Bcast(&w,1,MPI_INT,0,MPI_COMM_WORLD);
   h_local=(my_rank==0 || my_rank==(NP-1))?(h/NP+1):(h/NP+2);
   //printf("------------------------------------\n");
-  //fprintf( stderr, "#%d-W: %d\n",my_rank ,w);
-  //fprintf( stderr, "#%d-H: %d\n",my_rank ,h);
-  //fprintf( stderr, "#%d-hlocal: %d\n",my_rank ,h_local);
-  //fprintf( stderr, "#%d-Length => w*h/NP=%d*%d/%d=%d\n",my_rank ,w,h,NP,w*h/NP);
-  //printf("------------------------------------\n");
+//  fprintf( stderr, "#%d-W: %d\n",my_rank ,w);
+//  fprintf( stderr, "#%d-H: %d\n",my_rank ,h);
+//  fprintf( stderr, "#%d-hlocal: %d\n",my_rank ,h_local);
+//  fprintf( stderr, "#%d-Length => w*h/NP=%d*%d/%d=%d\n",my_rank ,w,h,NP,w*h/NP);
+//  printf("------------------------------------\n");
   local_data=(unsigned char*)malloc(sizeof(unsigned char)*w*h_local);
   //printf("-------Lets Scatter-------\n");
   MPI_Scatter(
   r.data,h*w/NP,MPI_UNSIGNED_CHAR,local_data+w*(my_rank!=0)/*ou on peut mettre w*(p==0)?0:1*/,
   h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
-  //printf("-------End Scattering-------\n");
+  //printf("-------End Scattering of #%d-------\n",my_rank);
 
   /* La convolution a proprement parler */
   for(i=0 ; i < nbiter ; i++){
 
      if(my_rank!=0)
      {
-        //printf("#%d-Send message to %d\n",my_rank,w);
-      	MPI_Send(local_data+w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD);
-      	//printf("#%d- Message sent\n",my_rank);
+        //printf("F#%d-Send message to #%d\n",my_rank,my_rank-1);
+      	MPI_Send(local_data+w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_LAST,MPI_COMM_WORLD);
+      	//printf("F#%d- Message sent to #%d\n",my_rank,my_rank-1);
       	MPI_Recv(local_data,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD,&status);
-      	//printf("#%d-Message received and stored at %d\n",my_rank,0);
+      	//printf("F#%d-Message received from #%d and stored at %d\n",my_rank,my_rank-1,0);
 
      }
      if(my_rank!=NP-1)
      {
-        //printf("#%d-Send message to %d\n",my_rank,(h_local-2)*w);
+        //printf("L#%d- Message sent to #%d\n",my_rank,my_rank+1);
+      	MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_LAST,MPI_COMM_WORLD,&status);
+//      	printf("L#%d-Message received from #%d and stored at %d\n",my_rank,my_rank+1,(h_local-1)*w);
+//        printf("L#%d-Send message to #%d\n",my_rank,my_rank+1);
  		MPI_Send(local_data+(h_local-2)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_FIRST,MPI_COMM_WORLD);
- 		//printf("#%d- Message sent\n",my_rank);
-      	MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_FIRST,MPI_COMM_WORLD,&status);
-      	//printf("#%d-Message received and stored at %d\n",my_rank,(h_local-1)*w);
-
      }
      convolution( filtre,local_data, h_local, w);
   } /* for i */
 
-  //printf("-------------------------Magic The Gathering-------------------------\n");
+//  if(my_rank==0)
+//    printf("-------------------------Magic The Gathering(start)-------------------------\n");
+
   MPI_Gather(local_data+w*(my_rank!=0),h*w/NP,MPI_UNSIGNED_CHAR,r.data,h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
+
+  if(my_rank==0)
+    printf("-------------------------Magic The Gathering(end)-------------------------\n");
 
 
   /* Sauvegarde du fichier Raster */
