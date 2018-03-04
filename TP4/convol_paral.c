@@ -298,7 +298,8 @@ int main(int argc, char *argv[]) {
 
   /* Variables se rapportant a l'image elle-meme */
   Raster r;
-  int    w, h,h_local;	/* nombre de lignes et de colonnes de l'image */
+  int    w, h;
+  unsigned int h_local;	/* nombre de lignes et de colonnes de l'image */
 
   int my_rank,NP/*Nombre de processeur*/;
   MPI_Status status;
@@ -329,64 +330,69 @@ int main(int argc, char *argv[]) {
   filtre = atoi(argv[2]);
   nbiter = atoi(argv[3]);
 
-
-
-  /* debut du chronometrage */
-  debut = my_gettimeofday();
   if(my_rank==0)
   {
+    /* debut du chronometrage */
+    debut = my_gettimeofday();
     /* Lecture du fichier Raster */
     lire_rasterfile( argv[1], &r);
     h = r.file.ras_height;
     w = r.file.ras_width;
-    printf("Zero Process\n");
+    printf("NP:%d\n",NP);
   }
-  h_local=(my_rank==0 || my_rank==(NP-1))?(h/NP+1):(h/NP+2);
 
   MPI_Bcast(&h,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast(&w,1,MPI_INT,0,MPI_COMM_WORLD);
-  fprintf( stderr, "#%d-W: %d\n",my_rank ,w);
-  fprintf( stderr, "#%d-H: %d\n",my_rank ,h);
-  local_data=(unsigned char*)malloc(sizeof(unsigned)*w*h/NP);
-
+  h_local=(my_rank==0 || my_rank==(NP-1))?(h/NP+1):(h/NP+2);
+  //printf("------------------------------------\n");
+  //fprintf( stderr, "#%d-W: %d\n",my_rank ,w);
+  //fprintf( stderr, "#%d-H: %d\n",my_rank ,h);
+  //fprintf( stderr, "#%d-hlocal: %d\n",my_rank ,h_local);
+  //fprintf( stderr, "#%d-Length => w*h/NP=%d*%d/%d=%d\n",my_rank ,w,h,NP,w*h/NP);
+  //printf("------------------------------------\n");
+  local_data=(unsigned char*)malloc(sizeof(unsigned char)*w*h_local);
+  //printf("-------Lets Scatter-------\n");
   MPI_Scatter(
   r.data,h*w/NP,MPI_UNSIGNED_CHAR,local_data+w*(my_rank!=0)/*ou on peut mettre w*(p==0)?0:1*/,
   h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
-
+  //printf("-------End Scattering-------\n");
 
   /* La convolution a proprement parler */
   for(i=0 ; i < nbiter ; i++){
 
      if(my_rank!=0)
      {
+        //printf("#%d-Send message to %d\n",my_rank,w);
       	MPI_Send(local_data+w,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD);
+      	//printf("#%d- Message sent\n",my_rank);
       	MPI_Recv(local_data,w,MPI_UNSIGNED_CHAR,my_rank-1,TAG_FIRST,MPI_COMM_WORLD,&status);
+      	//printf("#%d-Message received and stored at %d\n",my_rank,0);
 
      }
      if(my_rank!=NP-1)
      {
+        //printf("#%d-Send message to %d\n",my_rank,(h_local-2)*w);
  		MPI_Send(local_data+(h_local-2)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_FIRST,MPI_COMM_WORLD);
+ 		//printf("#%d- Message sent\n",my_rank);
       	MPI_Recv(local_data+(h_local-1)*w,w,MPI_UNSIGNED_CHAR,my_rank+1,TAG_FIRST,MPI_COMM_WORLD,&status);
+      	//printf("#%d-Message received and stored at %d\n",my_rank,(h_local-1)*w);
 
      }
      convolution( filtre,local_data, h_local, w);
   } /* for i */
 
+  //printf("-------------------------Magic The Gathering-------------------------\n");
+  MPI_Gather(local_data+w*(my_rank!=0),h*w/NP,MPI_UNSIGNED_CHAR,r.data,h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
 
-  MPI_Gather(local_data,h*w/NP,MPI_UNSIGNED_CHAR,r.data,h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
-
-
-  /* fin du chronometrage */
-  fin = my_gettimeofday();
-  printf("#%d-Temps total de calcul : %g seconde(s) \n",my_rank,fin - debut);
 
   /* Sauvegarde du fichier Raster */
   if(my_rank==0)
   {
+     /* fin du chronometrage */
+    fin = my_gettimeofday();
+    printf("#%d-Temps total de calcul : %g seconde(s) \n",my_rank,fin - debut);
     char nom_sortie[100] = "";
-    printf("NOM\n");
-    sprintf(nom_sortie, "post-convolution_filtre%d_nbIter%d.ras", filtre, nbiter);
-    printf("sprintf\n");
+    sprintf(nom_sortie, "post-convol_paral_NP%d_filtre%d_nbIter%d.ras",NP, filtre, nbiter);
     sauve_rasterfile(nom_sortie, &r);
     printf("sauve_rasterfile\n");
   }
