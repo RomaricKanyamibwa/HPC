@@ -385,8 +385,8 @@ int main(int argc, char *argv[]) {
 
   MPI_Gather(local_data+w*(my_rank!=0),h*w/NP,MPI_UNSIGNED_CHAR,r.data,h*w/NP,MPI_UNSIGNED_CHAR,0,MPI_COMM_WORLD);
 
-  if(my_rank==0)
-    printf("-------------------------Magic The Gathering(end)-------------------------\n");
+//  if(my_rank==0)
+//    printf("-------------------------Magic The Gathering(end)-------------------------\n");
 
 
   /* Sauvegarde du fichier Raster */
@@ -398,7 +398,7 @@ int main(int argc, char *argv[]) {
     char nom_sortie[100] = "";
     sprintf(nom_sortie, "post-convol_paral_NP%d_filtre%d_nbIter%d.ras",NP, filtre, nbiter);
     sauve_rasterfile(nom_sortie, &r);
-    printf("sauve_rasterfile\n");
+    //printf("sauve_rasterfile\n");
   }
 
   MPI_Finalize();
