@@ -85,25 +85,25 @@ int main()
 	double pi = pi_0();
 	fin = my_gettimeofday();
 	printf("Res=%lf\n",pi);
-    printf("#Temps total de calcul pi : %g seconde(s) \n",fin - debut);
+    printf("#Temps total de calcul pi sequentiel : %g seconde(s) \n",fin - debut);
 
   	debut = my_gettimeofday();
 	pi = pi_1();
 	fin = my_gettimeofday();
 	printf("Res=%lf\n",pi);
-    printf("#Temps total de calcul pi_1: %g seconde(s) \n",fin - debut);
+    printf("#Temps total de calcul pi_reduction: %g seconde(s) \n",fin - debut);
 
     debut = my_gettimeofday();
 	pi = pi_2();
 	fin = my_gettimeofday();
 	printf("Res=%lf\n",pi);
-    printf("#Temps total de calcul pi_2: %g seconde(s) \n",fin - debut);
+    printf("#Temps total de calcul pi_critical: %g seconde(s) \n",fin - debut);
 
     debut = my_gettimeofday();
 	pi = pi_3();
 	fin = my_gettimeofday();
 	printf("Res=%lf\n",pi);
-    printf("#Temps total de calcul pi_3: %g seconde(s) \n",fin - debut);
+    printf("#Temps total de calcul pi_atomic: %g seconde(s) \n",fin - debut);
 
 	return 1;
 }
