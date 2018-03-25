@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <immintrin.h>
+#include <malloc.h>
 
 #include <sys/time.h>
 
@@ -24,18 +26,39 @@ double my_gettimeofday(){
  * square matrices of order 'n'
  */
 void matmul(int n, REAL_T *A, REAL_T *B, REAL_T *C){
-  int i,j,k;
+  int i,j,k,l;
+  __m256 v1,v2,v3,z;
 
   for (i=0; i<n; i++){
     for (j=0; j<n; j++){
-      for (k=0; k<n; k++){
-	C[i*n+j] +=  A[i*n+k] *  B[k*n+j];
+      for (k=0; k<n/8; k++){
+        v1 = _mm256_load_ps(&A[i*n+k*8]);
+        v2 = _mm256_load_ps(&B[j*n+k*8]);
+        z  = _mm256_setzero_ps();
+        v3 = _mm256_mul_ps(v1,v2);
+        for(l=0;l<2;l++)
+        v3 = _mm256_hadd_ps(v3,z);//A0+A1 and A0+A1+A2+A3
+        C[i*n+j] += (REAL_T)(v3[0]+v3[4]);
       } /* for k */
     } /* for j */
   } /* for i */
 
 }
 
+REAL_T* transpose(int n,REAL_T* B)
+{
+    int i,j;
+    REAL_T* C;
+    if ((C = (REAL_T *) aligned_alloc(32,n*n*sizeof(REAL_T))) == NULL){
+        fprintf(stderr, "Error while allocating C.\n");
+    }
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++){
+          *(C+j*n+i) = *(B+i*n+j);
+        }
+    return C;
+
+}
 
 int main(int argc, char **argv)
 {
@@ -49,15 +72,20 @@ int main(int argc, char **argv)
   if (argc == 2){
     n = atoi(argv[1]);
   }
+  if(n%8!=0)
+  {
+      fprintf(stderr,"Error:N=%d is not a multiple of 8, can not perform vectorisation\n",n);
+      exit(-1);
+  }
 
   /* Allocate the matrices: */
-  if ((A = (REAL_T *) malloc(n*n*sizeof(REAL_T))) == NULL){
+  if ((A = (REAL_T *) aligned_alloc(32,n*n*sizeof(REAL_T))) == NULL){
     fprintf(stderr, "Error while allocating A.\n");
   }
-  if ((B = (REAL_T *) malloc(n*n*sizeof(REAL_T))) == NULL){
+  if ((B = (REAL_T *) aligned_alloc(32,n*n*sizeof(REAL_T))) == NULL){
     fprintf(stderr, "Error while allocating B.\n");
   }
-  if ((C = (REAL_T *) malloc(n*n*sizeof(REAL_T))) == NULL){
+  if ((C = (REAL_T *) aligned_alloc(32,n*n*sizeof(REAL_T))) == NULL){
     fprintf(stderr, "Error while allocating C.\n");
   }
 
@@ -68,7 +96,18 @@ int main(int argc, char **argv)
       *(B+i*n+j) = 1.0+j;
       *(C+i*n+j) = 1.0;
     }
-
+//    for(i=0; i<n ; i++){
+//    for(j=0; j<n ; j++)
+//      printf("%+e  ", B[i*n+j]);
+//    printf("\n");
+//  }
+    B=transpose(n,B);
+//    printf("Transposed matrix\n");
+//    for(i=0; i<n ; i++){
+//    for(j=0; j<n ; j++)
+//      printf("%+e  ", B[i*n+j]);
+//    printf("\n");
+//  }
   /* Start timing */
   debut = my_gettimeofday();
   for (nb=0; nb<NB_TIMES; nb++){
@@ -78,6 +117,7 @@ int main(int argc, char **argv)
   }
   fin = my_gettimeofday();
 
+  fprintf( stdout,"Vectorized result.\n");
   fprintf( stdout, "For n=%d: total computation time (with gettimeofday()) : %g s\n",
 	   n, (fin - debut)/NB_TIMES);
   fprintf( stdout, "For n=%d: performance = %g Gflop/s \n",

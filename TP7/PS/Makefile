@@ -1,4 +1,4 @@
-EXECS = ProduitScalaire
+EXECS = ProduitScalaire_scal
 #CFLAGS= -O3 
 CFLAGS= -O3 -ffast-math -mavx 
 CFLAGS2= -O3 -ffast-math -ftree-vectorize #-ftree-vectorizer-verbose=2
@@ -9,13 +9,13 @@ GREP_PATTERN= -i -e mul -e fmadd
 
 all: $(EXECS)
 
-ProduitScalaire: ProduitScalaire.c
+ProduitScalaire_scal: ProduitScalaire.c
 	gcc -S $(CFLAGS) -o $@.s $< ; grep $(GREP_PATTERN) $@.s
 	gcc $(CFLAGS) -o $@ $<
 	gcc $(CFLAGS2) -o $@_vect $<
 	gcc $(CFLAGS3) -o $@_march $<
 	gcc $(CFLAGS4) -o $@_All $<
-	gcc -o $@ $<
+	gcc -o $@_norm $<
 	gcc $(CFLAGS) -o $@_mavx ProduitScalaire_vect.c
 
 exec: all 

@@ -13,7 +13,7 @@ ProduitTermeATerme_scal: ProduitTermeATerme.c
 	gcc $(CFLAGS2) -o $@_vect $<
 	gcc $(CFLAGS3) -o $@_march $<
 	gcc $(CFLAGS4) -o $@_All $<
-	gcc -o ProduitTermeATerme_scal_norm $<
+	gcc -o $@_norm $<
 	gcc $(CFLAGS) -o $@_mavx ProduitTermeATerme_vectorize.c
 
 exec: all 
