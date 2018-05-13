@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include <sys/time.h>
+#include <cblas.h>
 
 double my_gettimeofday(){
   struct timeval tmp_time;
@@ -18,7 +19,7 @@ double my_gettimeofday(){
 }
 
 
-#define REAL_T float
+#define REAL_T double
 #define NB_TIMES 10
 
 /*** Matmul: ***/
@@ -46,7 +47,7 @@ void mm(int crow,int ccol,
         int stride,
         REAL_T *A, REAL_T *B, REAL_T *C){
   int i,j,k;
-int seuil=64;
+unsigned short seuil=4096;
 if(n*n<seuil)
 {
     //C[ccol+crow*stride]+=A[acol+arow*stride]*B[bcol+brow*stride];
@@ -87,6 +88,7 @@ if(n*n<seuil)
         }
     }
 
+    #pragma omp taskwait
     k=1;
     for(i=0;i<2;i++)
     {
@@ -100,6 +102,32 @@ if(n*n<seuil)
         }
     }
 }
+
+}
+
+
+void matmul_blas(int n,REAL_T *A, REAL_T *B, REAL_T *C){
+
+int M;     /* Number of row of matrix op(A) */
+int N;     /* Number of columns of matrix op(B) */
+int K;     /* Number of columns of matrix op(A) and rows ob(B) */
+int lda;   /* On entry, LDA specifies the first dimension of A as declared
+              in the calling (sub) program. When  TRANSA = 'N' or 'n' then
+              LDA must be at least  max( 1, m ), otherwise  LDA must be at
+              least  max( 1, k ).  */
+int ldb;   /* On entry, LDB specifies the first dimension of B as declared
+              in the calling (sub) program. When  TRANSB = 'N' or 'n' then
+              LDB must be at least  max( 1, k ), otherwise  LDB must be at
+              least  max( 1, n ). */
+int ldc;
+double alpha, beta;
+
+M=N=K=n;
+lda=ldb=ldc=n;
+alpha=1.0;
+beta=0.0;
+cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+M,N,K,alpha,A,lda,B,ldb,beta,C,ldc);
 
 }
 
@@ -140,7 +168,8 @@ int main(int argc, char **argv)
   for (nb=0; nb<NB_TIMES; nb++){
     /* Do matrix-product C=A*B+C */
     //matmul(n, A, B, C);
-    mm(0,0,0,0,0,0,n,n,A,B,C);
+    //mm(0,0,0,0,0,0,n,n,A,B,C);
+    matmul_blas(n,A,B,C);
     /* End timing */
   }
   fin = my_gettimeofday();

@@ -7,9 +7,10 @@ exit 1
 fi
 
 EXEC=$1
-OUTPUT_FILE="data_${EXEC}_blocks_omptask.txt"
+OUTPUT_FILE="data_${EXEC}_5.txt"
 
-echo "#N	GFLOP/S " > $OUTPUT_FILE
+echo "matmul with cblas " > $OUTPUT_FILE
+echo "#N	GFLOP/S " >> $OUTPUT_FILE
 
 for ((N=16; N <= 1024 ; N = N +16)); do 
     echo -n "For N=$N ... " 
