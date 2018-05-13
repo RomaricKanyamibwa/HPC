@@ -1,0 +1,6 @@
+perf crete:
+P=f*w*2
+P=3.5GHz*2*8(avx) =56 Gflops/s
+
+On a 2 coeurs donc
+P=3.5GHz*2*8(avx)*2 =112 Gflops/s
