@@ -1,5 +1,5 @@
 EXECS = matmul
-CFLAGS4= -O3  -ffast-math -mavx -ftree-vectorize -march=native -fopenmp -funroll-loops
+CFLAGS4= -Wall -Werror -O3  -ffast-math -mavx -ftree-vectorize -march=native -fopenmp -funroll-loops -I/opt/OpenBLAS/include/ -L/opt/OpenBLAS/lib -lopenblas -lpthread -lgfortran
 
 
 all: $(EXECS)
